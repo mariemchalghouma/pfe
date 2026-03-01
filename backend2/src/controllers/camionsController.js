@@ -94,6 +94,122 @@ export const getCamions = async () => {
   }
 };
 
+/* ═══ Gantt data — activity segments for all camions on a given date ═══ */
+export const getCamionsGantt = async (date) => {
+  try {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+
+    // 1) Get all camions
+    const camionsResult = await pool.query(`
+      SELECT DISTINCT ON ("PLAMOTI") "PLAMOTI" AS camion, "SALNOM" AS chauffeur
+      FROM voyage_chauffeur WHERE "PLAMOTI" IS NOT NULL ORDER BY "PLAMOTI"
+    `);
+
+    // 2) Get stops for the date
+    const stopsResult = await pool.query(`
+      SELECT camion, beginstoptime, endstoptime, stopduration, latitude, longitude, address
+      FROM voyage_tracking_stops
+      WHERE DATE(beginstoptime) = $1
+      ORDER BY camion, beginstoptime ASC
+    `, [targetDate]);
+
+    // 3) Get first/last GPS readings per camion for the date (activity window)
+    const gpsResult = await pool.query(`
+      SELECT camion,
+        MIN(gps_timestamp) AS first_seen,
+        MAX(gps_timestamp) AS last_seen,
+        SUM(CASE WHEN speed > 0 THEN 1 ELSE 0 END) AS moving_points,
+        COUNT(*) AS total_points
+      FROM local_histo_gps_all
+      WHERE DATE(gps_timestamp) = $1
+      GROUP BY camion
+    `, [targetDate]);
+
+    const gpsMap = {};
+    gpsResult.rows.forEach(r => {
+      gpsMap[r.camion?.toUpperCase()?.trim()] = r;
+    });
+
+    const stopsMap = {};
+    stopsResult.rows.forEach(s => {
+      const key = s.camion?.toUpperCase()?.trim();
+      if (!stopsMap[key]) stopsMap[key] = [];
+      stopsMap[key].push(s);
+    });
+
+    const ganttData = camionsResult.rows.map(c => {
+      const key = c.camion?.toUpperCase()?.trim();
+      const gps = gpsMap[key];
+      const stops = stopsMap[key] || [];
+
+      if (!gps) {
+        return { camion: c.camion, chauffeur: c.chauffeur || '—', segments: [], hasData: false };
+      }
+
+      const segments = [];
+      const dayStart = new Date(`${targetDate}T00:00:00`);
+      const dayEnd = new Date(`${targetDate}T23:59:59`);
+      const firstSeen = new Date(gps.first_seen);
+      const lastSeen = new Date(gps.last_seen);
+
+      // Sort stops by start time
+      const sortedStops = [...stops].sort((a, b) => new Date(a.beginstoptime) - new Date(b.beginstoptime));
+
+      // Before first GPS → inactive
+      if (firstSeen > dayStart) {
+        segments.push({ type: 'inactive', start: dayStart.toISOString(), end: firstSeen.toISOString() });
+      }
+
+      // Build segments from stops
+      let cursor = firstSeen;
+      sortedStops.forEach(stop => {
+        const stopStart = new Date(stop.beginstoptime);
+        const stopEnd = new Date(stop.endstoptime || stopStart.getTime() + (stop.stopduration || 0) * 60000);
+
+        if (stopStart > cursor) {
+          segments.push({ type: 'driving', start: cursor.toISOString(), end: stopStart.toISOString() });
+        }
+        const stopDuration = Number(stop.stopduration) || 0;
+        segments.push({
+          type: stopDuration > 30 ? 'stop_long' : 'stop',
+          start: stopStart.toISOString(),
+          end: stopEnd.toISOString(),
+          duration: stopDuration,
+          address: stop.address || '—',
+          lat: stop.latitude ? Number(stop.latitude) : null,
+          lng: stop.longitude ? Number(stop.longitude) : null,
+        });
+        cursor = stopEnd > cursor ? stopEnd : cursor;
+      });
+
+      // After last stop → driving until last seen
+      if (cursor < lastSeen) {
+        segments.push({ type: 'driving', start: cursor.toISOString(), end: lastSeen.toISOString() });
+      }
+
+      // After last seen → inactive
+      if (lastSeen < dayEnd) {
+        segments.push({ type: 'inactive', start: lastSeen.toISOString(), end: dayEnd.toISOString() });
+      }
+
+      return {
+        camion: c.camion,
+        chauffeur: c.chauffeur || '—',
+        firstSeen: gps.first_seen,
+        lastSeen: gps.last_seen,
+        movingPct: gps.total_points > 0 ? Math.round((gps.moving_points / gps.total_points) * 100) : 0,
+        segments,
+        hasData: true,
+      };
+    });
+
+    return Response.json({ success: true, data: ganttData, date: targetDate });
+  } catch (error) {
+    console.error('Error getCamionsGantt:', error);
+    return Response.json({ success: false, message: 'Erreur Gantt', error: process.env.NODE_ENV === 'development' ? error.message : undefined }, { status: 500 });
+  }
+};
+
 export const getCamionTrajet = async (camion) => {
   try {
     const result = await pool.query(

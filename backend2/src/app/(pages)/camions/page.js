@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { FiSearch, FiMapPin, FiArrowLeft } from 'react-icons/fi';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { FiSearch, FiMapPin, FiArrowLeft, FiBarChart2, FiList, FiCalendar, FiClock, FiUser } from 'react-icons/fi';
 import { FaGasPump, FaTachometerAlt, FaThermometerHalf, FaRoad } from 'react-icons/fa';
 import { camionsAPI } from '@/services/api';
 import { useMapContext } from '@/context/MapContext';
@@ -42,6 +42,127 @@ const getStatusIcon = (status) => {
     return createIcon(cfg.color, 'C');
 };
 
+/* ═══ Gantt helpers ═══ */
+const segmentColors = {
+    driving:    { bg: '#22c55e', label: 'En route',         text: 'white' },
+    stop:       { bg: '#f59e0b', label: 'Arrêt conforme',   text: 'white' },
+    stop_long:  { bg: '#f87171', label: 'Non conforme',     text: 'white' },
+    client:     { bg: '#8b5cf6', label: 'Client',           text: 'white' },
+    depot:      { bg: '#06b6d4', label: 'Dépôt',            text: 'white' },
+    inactive:   { bg: '#cbd5e1', label: 'Inactif',          text: '#64748b' },
+};
+
+const typeColorMap = { 'Semi': '#ef4444', 'Cargo': '#3b82f6', 'Frigorifique': '#22c55e' };
+const vehicleTypeMap = { 'NGI': 'Frigorifique', 'TDS': 'Cargo' };
+const getVehicleType = (camion) => {
+    if (!camion) return 'Cargo';
+    const upper = camion.toUpperCase();
+    for (const [prefix, type] of Object.entries(vehicleTypeMap)) {
+        if (upper.includes(prefix)) return type;
+    }
+    return 'Semi';
+};
+
+const fmtTime = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+const fmtDuration = (start, end) => {
+    const ms = new Date(end) - new Date(start);
+    const mins = Math.round(ms / 60000);
+    if (mins < 60) return `${mins}min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`;
+};
+
+/* ═══ GANTT BAR COMPONENT ═══ */
+const GanttBar = ({ data, hoveredSegment, setHoveredSegment, onClickCamion }) => {
+    const dayStart = useMemo(() => {
+        if (!data.segments?.length) return 0;
+        const d = new Date(data.segments[0]?.start);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    }, [data.segments]);
+    const dayMs = 24 * 60 * 60 * 1000;
+    const vType = getVehicleType(data.camion);
+    const vColor = typeColorMap[vType] || '#3b82f6';
+
+    return (
+        <div className="flex items-center gap-0 cursor-pointer" onClick={() => onClickCamion?.(data.camion)}>
+            {/* Camion label — left column */}
+            <div className="w-[150px] flex-shrink-0 pr-3 py-2 border-r border-gray-100">
+                <div className="font-extrabold text-[15px] text-gray-800 leading-tight">{data.camion}</div>
+                <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                    <FiUser className="text-gray-400 text-[10px]" />
+                    <span>{(data.chauffeur || '—').split(' ')[0]}</span>
+                </div>
+                <div className="text-xs font-bold mt-0.5" style={{ color: vColor }}>{vType}</div>
+            </div>
+
+            {/* Bar */}
+            <div className="flex-1 h-[42px] bg-[#d1dce8] rounded-md relative overflow-hidden mx-1">
+                {data.hasData && data.segments?.map((seg, i) => {
+                    const start = new Date(seg.start).getTime();
+                    const end = new Date(seg.end).getTime();
+                    const leftPct = ((start - dayStart) / dayMs) * 100;
+                    const widthPct = Math.max(((end - start) / dayMs) * 100, 0.2);
+                    const segColor = segmentColors[seg.type] || segmentColors.inactive;
+                    const isHovered = hoveredSegment === `${data.camion}-${i}`;
+                    const duration = fmtDuration(seg.start, seg.end);
+                    const showLabel = widthPct > 3;
+
+                    return (
+                        <div key={i}
+                            className="absolute top-0 h-full flex items-center justify-center transition-all duration-100 group/seg"
+                            style={{
+                                left: `${Math.max(0, Math.min(100, leftPct))}%`,
+                                width: `${Math.min(widthPct, 100 - Math.max(0, leftPct))}%`,
+                                background: segColor.bg,
+                                zIndex: isHovered ? 20 : (seg.type === 'inactive' ? 0 : 1),
+                                borderRadius: '4px',
+                            }}
+                            onMouseEnter={() => setHoveredSegment(`${data.camion}-${i}`)}
+                            onMouseLeave={() => setHoveredSegment(null)}
+                        >
+                            {showLabel && (
+                                <span className="text-[11px] font-bold drop-shadow-sm select-none" style={{ color: segColor.text || 'white' }}>
+                                    {duration}
+                                </span>
+                            )}
+
+                            {/* Hover tooltip */}
+                            {isHovered && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 bg-white rounded-xl shadow-xl border border-gray-200 px-4 py-3 text-left min-w-[220px] pointer-events-none"
+                                    style={{ whiteSpace: 'nowrap' }}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: segColor.bg }} />
+                                        <span className="font-bold text-gray-700 text-sm">{segColor.label}</span>
+                                    </div>
+                                    <p className="text-gray-500 text-xs">{data.camion} · {data.chauffeur}</p>
+                                    <p className="text-gray-500 text-xs mt-1 flex items-center gap-1">
+                                        <FiClock className="text-gray-400" />
+                                        {fmtTime(seg.start)} → {fmtTime(seg.end)} ({duration})
+                                    </p>
+                                    {seg.address && seg.address !== '—' && (
+                                        <p className="text-gray-400 text-[10px] mt-1">📍 {seg.address}</p>
+                                    )}
+                                    <p className="text-orange-400 text-[10px] mt-1.5 font-medium">Cliquez pour les détails</p>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+                {!data.hasData && (
+                    <div className="absolute inset-0 flex items-center justify-center text-[10px] text-gray-400">Pas de données GPS</div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+/* ═══ MAIN COMPONENT ═══ */
 const Camions = () => {
     const { setMapData, setPolylines, setFlyTo } = useMapContext();
     const [camions, setCamions] = useState([]);
@@ -51,6 +172,14 @@ const Camions = () => {
     const [search, setSearch] = useState('');
     const [selectedCamionPlaque, setSelectedCamionPlaque] = useState(null);
     const [trajet, setTrajet] = useState([]);
+
+    // Gantt state
+    const [viewMode, setViewMode] = useState('list'); // 'list' | 'gantt'
+    const [ganttData, setGanttData] = useState([]);
+    const [ganttDate, setGanttDate] = useState(new Date().toISOString().split('T')[0]);
+    const [ganttLoading, setGanttLoading] = useState(false);
+    const [hoveredSegment, setHoveredSegment] = useState(null);
+    const [ganttSearch, setGanttSearch] = useState('');
 
     const loadCamions = useCallback(async () => {
         setLoading(true);
@@ -100,6 +229,38 @@ const Camions = () => {
     useEffect(() => {
         loadCamions();
     }, [loadCamions]);
+
+    /* ── Gantt data loader ── */
+    const loadGantt = useCallback(async (date) => {
+        setGanttLoading(true);
+        try {
+            const res = await camionsAPI.getGantt(date);
+            if (res.success) setGanttData(res.data || []);
+        } catch (err) {
+            console.error('Erreur Gantt:', err);
+            setGanttData([]);
+        } finally {
+            setGanttLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (viewMode === 'gantt') loadGantt(ganttDate);
+    }, [viewMode, ganttDate, loadGantt]);
+
+    const filteredGantt = useMemo(() => {
+        const q = ganttSearch.toLowerCase().trim();
+        if (!q) return ganttData;
+        return ganttData.filter(d =>
+            d.camion?.toLowerCase().includes(q) || d.chauffeur?.toLowerCase().includes(q)
+        );
+    }, [ganttData, ganttSearch]);
+
+    const ganttStats = useMemo(() => {
+        const active = ganttData.filter(d => d.hasData);
+        const avgMoving = active.length > 0 ? Math.round(active.reduce((s, d) => s + (d.movingPct || 0), 0) / active.length) : 0;
+        return { total: ganttData.length, active: active.length, inactive: ganttData.length - active.length, avgMoving };
+    }, [ganttData]);
 
     const loadTrajet = useCallback(async (plaque) => {
         if (!plaque) {
@@ -160,26 +321,125 @@ const Camions = () => {
         setPolylines([]);
     };
 
+    /* ═══ hours axis for gantt ═══ */
+    const hours = Array.from({ length: 25 }, (_, i) => i);
+
     return (
         <div className="flex h-full">
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {loading && (
+
+                {/* ── View mode toggle ── */}
+                <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-gray-100 bg-white">
+                    <h2 className="text-xl font-bold text-gray-800">Camions</h2>
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                        <button onClick={() => { setViewMode('list'); setSelectedCamionPlaque(null); }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5 ${viewMode === 'list' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                            <FiList className="text-sm" /> Liste
+                        </button>
+                        <button onClick={() => setViewMode('gantt')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5 ${viewMode === 'gantt' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                            <FiBarChart2 className="text-sm" /> Gantt
+                        </button>
+                    </div>
+                </div>
+
+                {loading && viewMode === 'list' && (
                     <div className="p-6 text-center text-gray-500">Chargement des camions…</div>
                 )}
-                {error && !loading && (
+                {error && !loading && viewMode === 'list' && (
                     <div className="p-4 mx-4 mt-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
                         {error}
-                        <button
-                            type="button"
-                            onClick={loadCamions}
-                            className="block mt-2 text-orange-600 font-medium hover:underline"
-                        >
-                            Réessayer
-                        </button>
+                        <button type="button" onClick={loadCamions} className="block mt-2 text-orange-600 font-medium hover:underline">Réessayer</button>
                     </div>
                 )}
 
-                {!loading && selectedCamion ? (
+                {/* ═══ GANTT VIEW ═══ */}
+                {viewMode === 'gantt' && (
+                    <div className="flex-1 overflow-y-auto px-4 py-3">
+                        {/* Hint */}
+                        <p className="text-sm text-gray-400 mb-3">Cliquez sur un camion pour voir son trajet →</p>
+
+                        {/* Legend */}
+                        <div className="flex items-center gap-5 mb-4 text-xs">
+                            {Object.entries(segmentColors).map(([key, val]) => (
+                                <div key={key} className="flex items-center gap-1.5">
+                                    <span className="w-3.5 h-3.5 rounded-full inline-block" style={{ background: val.bg }} />
+                                    <span className="text-gray-600 font-medium">{val.label}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Gantt toolbar */}
+                        <div className="flex flex-wrap items-center gap-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <FiCalendar className="text-gray-400" />
+                                <input type="date" value={ganttDate} onChange={e => setGanttDate(e.target.value)}
+                                    className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium" />
+                            </div>
+                            <div className="relative flex-1 max-w-xs">
+                                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input type="text" value={ganttSearch} onChange={e => setGanttSearch(e.target.value)}
+                                    placeholder="Rechercher camion..."
+                                    className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                            </div>
+                            <div className="flex items-center gap-2 ml-auto">
+                                <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-200">
+                                    {ganttStats.active} actifs
+                                </span>
+                                <span className="px-3 py-1 rounded-full bg-gray-50 text-gray-500 text-xs font-bold border border-gray-200">
+                                    {ganttStats.inactive} inactifs
+                                </span>
+                            </div>
+                        </div>
+
+                        {ganttLoading ? (
+                            <div className="flex justify-center py-20">
+                                <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                {/* Time axis header */}
+                                <div className="flex items-center border-b border-gray-200 bg-gray-50">
+                                    <div className="w-[150px] flex-shrink-0 px-3 py-2 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-r border-gray-100">CAMION</div>
+                                    <div className="flex-1 relative h-8 mx-1">
+                                        {hours.map(h => (
+                                            <div key={h} className="absolute top-0 h-full"
+                                                style={{ left: `${(h / 24) * 100}%` }}>
+                                                <div className="h-full border-l border-gray-200" />
+                                                <span className="absolute top-1.5 left-1 text-[10px] text-gray-400 font-semibold">
+                                                    {h < 24 ? `${String(h).padStart(2, '0')}:00` : ''}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Rows */}
+                                <div className="divide-y divide-gray-100">
+                                    {filteredGantt.map((d, i) => (
+                                        <div key={d.camion || i} className="px-2 py-1 hover:bg-orange-50/20 transition-colors relative">
+                                            <GanttBar data={d} hoveredSegment={hoveredSegment} setHoveredSegment={setHoveredSegment}
+                                                onClickCamion={(plaque) => {
+                                                    const cam = camions.find(c => c.plaque === plaque);
+                                                    if (cam) { setViewMode('list'); handleSelectCamion(cam); }
+                                                }} />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {filteredGantt.length === 0 && !ganttLoading && (
+                                    <div className="py-16 text-center text-gray-400">
+                                        <FiBarChart2 className="text-4xl mx-auto mb-2 text-gray-200" />
+                                        <p className="font-medium">Aucune donnée pour cette date</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ LIST VIEW ═══ */}
+                {viewMode === 'list' && !loading && selectedCamion ? (
                     <div className="flex-1 overflow-y-auto">
                         <div className="px-4 pt-4 pb-2">
                             <button
@@ -293,10 +553,9 @@ const Camions = () => {
                             </div>
                         </div>
                     </div>
-                ) : (
+                ) : viewMode === 'list' && !loading ? (
                     <>
                         <div className="p-4 border-b border-gray-100">
-                            <h2 className="text-xl font-bold text-gray-800 mb-3">Camions</h2>
                             <div className="relative">
                                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -352,7 +611,7 @@ const Camions = () => {
                             })}
                         </div>
                     </>
-                )}
+                ) : null}
             </div>
         </div>
     );
