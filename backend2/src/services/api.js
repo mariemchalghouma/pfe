@@ -81,6 +81,22 @@ export const poiAPI = {
     }),
 };
 
+// Groups API
+export const groupsAPI = {
+    getGroups: () => fetchWithAuth('/api/groups'),
+    createGroup: (data) => fetchWithAuth('/api/groups', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    }),
+    updateGroup: (id, data) => fetchWithAuth(`/api/groups/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    }),
+    deleteGroup: (id) => fetchWithAuth(`/api/groups/${id}`, {
+        method: 'DELETE',
+    }),
+};
+
 // Arrets API
 export const arretsAPI = {
     getArrets: () => fetchWithAuth('/api/arrets'),
@@ -93,4 +109,4 @@ export const carburantAPI = {
     getNiveau: (camion, params = {}) => fetchWithAuth(`/api/carburant/${encodeURIComponent(camion)}/niveau${buildQueryString(params)}`),
 };
 
-export default { authAPI, camionsAPI, ouverturesAPI, poiAPI, arretsAPI, carburantAPI };
+export default { authAPI, camionsAPI, ouverturesAPI, poiAPI, arretsAPI, carburantAPI, groupsAPI };
