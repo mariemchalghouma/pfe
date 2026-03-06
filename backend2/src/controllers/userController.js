@@ -45,13 +45,15 @@ export const createUser = async (req) => {
     try {
         const { email, password, first_name, last_name, identifiant, phone, roles, status } = await req.json();
 
-        // Check if user already exists
-        const checkUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-        if (checkUser.rows.length > 0) {
-            return Response.json(
-                { success: false, message: 'Cet email est déjà utilisé' },
-                { status: 400 }
-            );
+        // Check if user already exists (only if email is provided)
+        if (email && email.trim() !== '') {
+            const checkUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+            if (checkUser.rows.length > 0) {
+                return Response.json(
+                    { success: false, message: 'Cet email est déjà utilisé' },
+                    { status: 400 }
+                );
+            }
         }
 
         const name = `${first_name} ${last_name}`.trim();

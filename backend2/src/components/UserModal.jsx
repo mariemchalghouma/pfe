@@ -87,8 +87,23 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Name Section */}
+                        {/* Main Info Section */}
                         <div className="space-y-4">
+                            {/* Top Fields: ID and Password */}
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Identifiant *</label>
+                                    <input required type="text" name="identifiant" value={formData.identifiant} onChange={handleChange} placeholder="ex: m.benali"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm" />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe {!initialData && '*'}</label>
+                                    <input required={!initialData} type="password" name="password" value={formData.password} onChange={handleChange} placeholder="••••••••"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm" />
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Prénom *</label>
@@ -102,27 +117,15 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                 </div>
                             </div>
 
-                            <div className="space-y-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Identifiant *</label>
-                                <input required type="text" name="identifiant" value={formData.identifiant} onChange={handleChange} placeholder="ex: m.benali"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm" />
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                                <input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="admin@lumiere.tn"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm" />
-                            </div>
-
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="+216 98..."
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="admin@lumiere.tn"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe {!initialData && '*'}</label>
-                                    <input required={!initialData} type="password" name="password" value={formData.password} onChange={handleChange} placeholder="••••••••"
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="+216 98..."
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm" />
                                 </div>
                             </div>
