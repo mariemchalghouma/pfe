@@ -81,7 +81,7 @@ const Administration = () => {
     };
 
     const getInitials = (user) => {
-        const f = user.first_name  ? user.first_name [0] : (user.first_name ? user.first_name[0] : (user.name ? user.name[0] : '?'));
+        const f = user.first_name ? user.first_name[0] : (user.first_name ? user.first_name[0] : (user.name ? user.name[0] : '?'));
         const l = user.last_name ? user.last_name[0] : '';
         return (f + l).toUpperCase();
     };
@@ -95,8 +95,6 @@ const Administration = () => {
                         <FiShield className="text-orange-600 text-xl" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900 tracking-tight">Gestion des Utilisateurs</h1>
-                        <p className="text-gray-500 text-[11px] font-medium">Administrer les comptes et les rôles d'accès</p>
                     </div>
                 </div>
                 <button

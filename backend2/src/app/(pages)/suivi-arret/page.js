@@ -286,51 +286,51 @@ const Arrets = () => {
 
                 {/* Graphe */}
                 {chartData.length > 0 && (
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.1em]">
-                            ARRÊTS PAR DATE — CONFORME VS NON CONFORME
-                        </h3>
-                    </div>
-                    <div className="h-[110px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#9ca3af' }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#d1d5db' }} />
-                                <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '12px' }} />
-                                <Line
-                                    type="monotone"
-                                    dataKey="conforme"
-                                    name="Conforme"
-                                    stroke="#22c55e"
-                                    strokeWidth={2}
-                                    dot={{ r: 4, fill: '#22c55e', strokeWidth: 2, stroke: '#fff' }}
-                                    activeDot={{ r: 6 }}
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="non_conforme"
-                                    name="Non conforme"
-                                    stroke="#ef4444"
-                                    strokeWidth={2}
-                                    dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }}
-                                    activeDot={{ r: 6 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <div className="flex justify-center gap-6 mt-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Conforme</span>
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.1em]">
+                                ARRÊTS PAR DATE — CONFORME VS NON CONFORME
+                            </h3>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Non conforme</span>
+                        <div className="h-[110px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#9ca3af' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#d1d5db' }} />
+                                    <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '12px' }} />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="conforme"
+                                        name="Conforme"
+                                        stroke="#22c55e"
+                                        strokeWidth={2}
+                                        dot={{ r: 4, fill: '#22c55e', strokeWidth: 2, stroke: '#fff' }}
+                                        activeDot={{ r: 6 }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="non_conforme"
+                                        name="Non conforme"
+                                        stroke="#ef4444"
+                                        strokeWidth={2}
+                                        dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }}
+                                        activeDot={{ r: 6 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="flex justify-center gap-6 mt-4">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Conforme</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Non conforme</span>
+                            </div>
                         </div>
                     </div>
-                </div>
                 )}
 
                 {/* Table */}
@@ -342,7 +342,10 @@ const Arrets = () => {
                                     <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">Camion</th>
                                     <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">Date & Heure</th>
                                     <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">Durée</th>
-                                    <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">Localisation (GPS)</th>
+                                    <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">POI proche</th>
+                                    <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">N° Voyage</th>
+                                    <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">Chauffeur</th>
+                                    <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">Téléphone</th>
                                     <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">Vérification (POI)</th>
                                     <th className="px-6 py-2.5 font-bold text-gray-500 uppercase tracking-wider text-[11px]">Actions</th>
                                 </tr>
@@ -356,7 +359,10 @@ const Arrets = () => {
                                         style={{ backgroundColor: arret.status === 'conforme' ? '#f0fdf4' : '#fef2f2' }}
                                     >
                                         <td className="px-6 py-2 whitespace-nowrap">
-                                            <span className="font-semibold text-gray-900 text-sm">{arret.camion}</span>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-gray-900 text-sm">{arret.camion}</span>
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{arret.systemgps}</span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-2 whitespace-nowrap font-medium text-gray-600">{arret.date}</td>
                                         <td className="px-6 py-2 whitespace-nowrap">
@@ -367,6 +373,9 @@ const Arrets = () => {
                                                 {arret.poiPlanning === '-' ? 'Site Inconnu' : arret.poiPlanning}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-gray-600 font-medium">{arret.voycle}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-gray-600 font-medium">{arret.chauffeur_nom}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-gray-600 font-medium">{arret.chauffeur_tel}</td>
                                         <td className="px-6 py-2">
                                             <div className="flex flex-col gap-1.5">
                                                 <div className="flex items-center gap-2">
@@ -406,11 +415,11 @@ const Arrets = () => {
                     </div>
                     {filteredData.length === 0 && !loading && (
                         <div className="flex flex-col items-center justify-center py-20 bg-gray-50/30 text-center">
-                            <div className="w-[102px] h-[102px] rounded-3xl bg-[#F9731614] flex items-center justify-center mb-6">
+                            <div className="w-[80px] h-[80px] rounded-2xl bg-[#F9731614] flex items-center justify-center mb-4">
                                 <EmptyStopIcon />
                             </div>
-                            <p className="text-[40px] leading-none text-gray-900 font-black tracking-tight mb-4">Aucun arrêt trouvé</p>
-                            <p className="text-[32px] leading-[1.35] text-gray-500 font-medium max-w-3xl px-6">
+                            <p className="text-2xl leading-none text-gray-900 font-black tracking-tight mb-2">Aucun arrêt trouvé</p>
+                            <p className="text-base leading-relaxed text-gray-500 font-medium max-w-lg px-6">
                                 Aucune donnée ne correspond à la date sélectionnée.<br />
                                 Modifiez les filtres ou choisissez une autre date.
                             </p>

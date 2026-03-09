@@ -29,8 +29,20 @@ export const getStops = async ({ date, dateStart, dateEnd } = {}) => {
     const start = dateStart || date || new Date().toISOString().split('T')[0];
     const end = dateEnd || date || start;
 
-    const poiResult = await pool.query('SELECT code, lat, lng FROM poi');
+    const poiResult = await pool.query(`
+      SELECT code, description as nom, lat, lng FROM poi
+      UNION ALL
+      SELECT code_client as code, nom_client as nom, lat, lng FROM magasin_aziza
+    `);
     const pois = poiResult.rows;
+
+    // Récupérer les données de planification voyage_chauffeur pour la période
+    const voyageResult = await pool.query(`
+      SELECT "PLAMOTI", "VOYDTD", "VOYCLE", "SALNOM", "SALTEL", "OTDCODE"
+      FROM voyage_chauffeur
+      WHERE DATE("VOYDTD") BETWEEN $1 AND $2
+    `, [start, end]);
+    const voyages = voyageResult.rows;
 
     const query = `
       SELECT
@@ -41,6 +53,7 @@ export const getStops = async ({ date, dateStart, dateEnd } = {}) => {
           s.latitude AS lat,
           s.longitude AS lng,
           s.address,
+          s.systemgps,
           AVG(g.latitude) AS avg_lat,
           AVG(g.longitude) AS avg_lng
       FROM voyage_tracking_stops s
@@ -50,15 +63,18 @@ export const getStops = async ({ date, dateStart, dateEnd } = {}) => {
       WHERE DATE(s.beginstoptime) BETWEEN $1 AND $2
         AND s.endstoptime IS NOT NULL
         AND DATE(s.endstoptime) BETWEEN $1 AND $2
-      GROUP BY s.camion, s.beginstoptime, s.endstoptime, s.stopduration, s.latitude, s.longitude, s.address, s.created_date
+      GROUP BY s.camion, s.beginstoptime, s.endstoptime, s.stopduration, s.latitude, s.longitude, s.address, s.created_date, s.systemgps
       ORDER BY s.beginstoptime DESC
     `;
 
     const result = await pool.query(query, [start, end]);
 
+    const normalize = (val) => (val || '').toString().replace(/\s+/g, '').toUpperCase();
+
     const arrets = result.rows.map((row, index) => {
       const refLat = row.avg_lat ? parseFloat(row.avg_lat) : parseFloat(row.lat);
       const refLng = row.avg_lng ? parseFloat(row.avg_lng) : parseFloat(row.lng);
+      const stopDate = row.beginstoptime ? new Date(row.beginstoptime).toISOString().split('T')[0] : null;
 
       let minDistance = Infinity;
       let nearestPoi = null;
@@ -68,11 +84,26 @@ export const getStops = async ({ date, dateStart, dateEnd } = {}) => {
           const dist = calculateDistance(refLat, refLng, parseFloat(poi.lat), parseFloat(poi.lng));
           if (dist < minDistance) {
             minDistance = dist;
-            nearestPoi = poi.code;
+            nearestPoi = poi;
           }
         });
       }
-      const isConforme = minDistance <= 10;
+
+      // Vérifier si l'arrêt était planifié (Matching Voyage Chauffeur)
+      const stopCamionNorm = normalize(row.camion);
+      const matchedVoyage = voyages.find(v => {
+        const voyageCamionNorm = normalize(v.PLAMOTI);
+        const voyageDate = v.VOYDTD ? new Date(v.VOYDTD).toISOString().split('T')[0] : null;
+        const voyagePoiNorm = normalize(v.OTDCODE);
+        const poiNorm = nearestPoi ? normalize(nearestPoi.code) : null;
+
+        return voyageCamionNorm === stopCamionNorm &&
+          voyageDate === stopDate &&
+          voyagePoiNorm === poiNorm;
+      });
+
+      // Conformité : Proximité <= 10m ET Planifié
+      const isConforme = (minDistance <= 10) && !!matchedVoyage;
 
       return {
         id: index + 1,
@@ -84,7 +115,11 @@ export const getStops = async ({ date, dateStart, dateEnd } = {}) => {
           ? `${row.stopduration.hours || 0}h ${row.stopduration.minutes || 0}min`
           : '-',
         poiGps: row.address || '-',
-        poiPlanning: nearestPoi || (isConforme ? 'Site Validé' : '-'),
+        poiPlanning: nearestPoi ? `${nearestPoi.code} - ${nearestPoi.nom}` : (isConforme ? 'Site Validé' : '-'),
+        systemgps: row.systemgps || '-',
+        voycle: matchedVoyage ? matchedVoyage.VOYCLE : '-',
+        chauffeur_nom: matchedVoyage ? matchedVoyage.SALNOM : '-',
+        chauffeur_tel: matchedVoyage ? matchedVoyage.SALTEL : '-',
         nVoyage: '-',
         status: isConforme ? 'conforme' : 'non_conforme',
         lat: refLat,

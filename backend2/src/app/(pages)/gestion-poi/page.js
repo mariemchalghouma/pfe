@@ -89,23 +89,39 @@ const GestionPoi = () => {
     }, [history, historySearch, historyActionFilter]);
 
     const handleSelectPoi = (poi) => {
+        const lat = parseFloat(poi.lat);
+        const lng = parseFloat(poi.lng);
+
+        if (isNaN(lat) || isNaN(lng)) {
+            alert("Ce POI n'a pas de coordonnées valides.");
+            return;
+        }
+
         setSelectedPoiId(poi.id);
         const group = groups.find((g) => g.nom === poi.groupe) || { couleur: '#3b82f6' };
         setMapPositions([{
-            id: poi.id, lat: parseFloat(poi.lat), lng: parseFloat(poi.lng),
+            id: poi.id, lat, lng,
             label: poi.code, color: group.couleur, info: `${poi.groupe} · ${poi.description}`,
         }]);
         setIsMapOpen(true);
     };
 
     const handleOpenFullMap = () => {
-        const positions = filteredPois.map((poi) => {
-            const group = groups.find((g) => g.nom === poi.groupe) || { couleur: '#3b82f6' };
-            return {
-                id: poi.id, lat: parseFloat(poi.lat), lng: parseFloat(poi.lng),
-                label: poi.code, color: group.couleur, info: `${poi.groupe} · ${poi.description}`,
-            };
-        });
+        const positions = filteredPois
+            .filter(poi => !isNaN(parseFloat(poi.lat)) && !isNaN(parseFloat(poi.lng)))
+            .map((poi) => {
+                const group = groups.find((g) => g.nom === poi.groupe) || { couleur: '#3b82f6' };
+                return {
+                    id: poi.id, lat: parseFloat(poi.lat), lng: parseFloat(poi.lng),
+                    label: poi.code, color: group.couleur, info: `${poi.groupe} · ${poi.description}`,
+                };
+            });
+
+        if (positions.length === 0) {
+            alert("Aucun POI avec des coordonnées valides à afficher sur la carte.");
+            return;
+        }
+
         setMapPositions(positions);
         setIsMapOpen(true);
     };

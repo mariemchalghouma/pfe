@@ -21,10 +21,10 @@ const formatDureeMinutes = (minutes) => {
 
 const EmptyDoorIcon = () => (
     <svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M7.5 3.5L13.5 2.5C14.2 2.4 14.8 2.9 14.8 3.6V20.3C14.8 20.9 14.2 21.4 13.5 21.3L7.5 20.3V3.5Z" stroke="#F97316" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M14.8 4.5H17.5C18.3 4.5 19 5.2 19 6V18C19 18.8 18.3 19.5 17.5 19.5H14.8" stroke="#F97316" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="11.2" cy="11.8" r="0.8" fill="#F97316"/>
-        <path d="M5 20.5H19.5" stroke="#F97316" strokeWidth="1.8" strokeLinecap="round"/>
+        <path d="M7.5 3.5L13.5 2.5C14.2 2.4 14.8 2.9 14.8 3.6V20.3C14.8 20.9 14.2 21.4 13.5 21.3L7.5 20.3V3.5Z" stroke="#F97316" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M14.8 4.5H17.5C18.3 4.5 19 5.2 19 6V18C19 18.8 18.3 19.5 17.5 19.5H14.8" stroke="#F97316" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="11.2" cy="11.8" r="0.8" fill="#F97316" />
+        <path d="M5 20.5H19.5" stroke="#F97316" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
 );
 
@@ -218,7 +218,6 @@ const OuverturePorte = () => {
     return (
         <>
             <div className="p-6">
-                <h1 className="text-2xl font-bold text-gray-800 mb-6">Ouverture Portes</h1>
 
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                     <div className="flex flex-wrap items-center gap-4">
@@ -410,13 +409,13 @@ const OuverturePorte = () => {
                     </div>
 
                     {filteredData.length === 0 && !loading && (
-                        <div className="flex flex-col items-center justify-center py-24 bg-gray-50/30 text-center">
-                            <div className="w-24 h-24 rounded-3xl bg-orange-50 flex items-center justify-center mb-7">
+                        <div className="flex flex-col items-center justify-center py-20 bg-gray-50/30 text-center">
+                            <div className="w-[80px] h-[80px] rounded-2xl bg-orange-50 flex items-center justify-center mb-4">
                                 <EmptyDoorIcon />
                             </div>
-                            <h3 className="text-4xl font-extrabold text-gray-900 mb-4">Aucun evenement trouve</h3>
-                            <p className="text-gray-500 text-lg leading-relaxed max-w-xl">
-                                Aucune donnee ne correspond a la date selectionnee.<br />
+                            <h3 className="text-2xl leading-none text-gray-900 font-black tracking-tight mb-2">Aucun événement trouvé</h3>
+                            <p className="text-base leading-relaxed text-gray-500 font-medium max-w-lg px-6">
+                                Aucune donnée ne correspond à la date sélectionnée.<br />
                                 Modifiez les filtres ou choisissez une autre date.
                             </p>
                         </div>
