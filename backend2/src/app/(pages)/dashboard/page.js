@@ -65,13 +65,15 @@ const Dashboard = () => {
                         <h1 className="text-3xl font-black text-gray-900 tracking-tight">Tableau de bord</h1>
                         <p className="text-gray-500 mt-1 font-medium">Aperçu en temps réel de votre flotte</p>
                     </div>
-                    <button
-                        onClick={() => setIsMapOpen(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-all shadow-xl shadow-gray-200"
-                    >
-                        <FiMap className="text-xl" />
-                        Suivi en temps réel
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsMapOpen(true)}
+                            className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-all shadow-xl shadow-gray-200"
+                        >
+                            <FiMap className="text-xl" />
+                            Suivi en temps réel
+                        </button>
+                    </div>
                 </div>
 
                 {showLoginSuccess && (

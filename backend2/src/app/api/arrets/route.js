@@ -9,6 +9,7 @@ export async function GET(request) {
   const date = searchParams.get('date');
   const dateStart = searchParams.get('dateStart');
   const dateEnd = searchParams.get('dateEnd');
+  const site = searchParams.get('site');
 
-  return getStops({ date, dateStart, dateEnd });
+  return getStops({ date, dateStart, dateEnd, site });
 }

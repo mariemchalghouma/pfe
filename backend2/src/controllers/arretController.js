@@ -38,7 +38,7 @@ export const getStops = async ({ date, dateStart, dateEnd } = {}) => {
 
     // Récupérer les données de planification voyage_chauffeur pour la période
     const voyageResult = await pool.query(`
-      SELECT "PLAMOTI", "VOYDTD", "VOYCLE", "SALNOM", "SALTEL", "OTDCODE"
+      SELECT "PLAMOTI", "VOYDTD", "VOYCLE", "SALNOM", "SALTEL", "RGILIBL", "SITSIRETEDI","OTDCODE"
       FROM voyage_chauffeur
       WHERE DATE("VOYDTD") BETWEEN $1 AND $2
     `, [start, end]);
